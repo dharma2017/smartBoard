@@ -1,0 +1,10 @@
+{
+  "name": "smartboard",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "check": "node scripts/check.mjs",
+    "android:build": "node scripts/build-android.mjs"
+  }
+}
