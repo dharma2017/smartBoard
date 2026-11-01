@@ -12,16 +12,19 @@ The board UI and assets are bundled locally. API requests use a native HTTPS bri
 
 ## Free hosted setup
 
-Use [Render Free](https://render.com/docs/free) for FastAPI and [Neon Free](https://neon.com/pricing) for PostgreSQL. Both have usage limits. Render's free web service sleeps after 15 idle minutes, takes roughly a minute to wake, and loses local files on restarts/spin-down. Its free PostgreSQL service expires after 30 days, so use Neon for longer-lived board data. Do not use the local SQLite default on an ephemeral host.
+Use [Render Free](https://render.com/docs/free) for the Next.js web app and FastAPI, and [Neon Free](https://neon.com/pricing) for PostgreSQL. Free services have usage limits and sleep after 15 idle minutes; each takes roughly a minute to wake. Render's local files are lost on restarts/spin-down, and its free PostgreSQL service expires after 30 days, so use Neon for longer-lived board data. Do not use the local SQLite default on an ephemeral host.
 
 1. Push this project to a GitHub, GitLab or Bitbucket repository. Do not commit `.env`, database files or access tokens.
 2. Create a Neon Free project in a region near your Render service. In Neon's connection panel, copy the PostgreSQL connection string with TLS enabled. The API accepts `postgresql://`, `postgres://` and `postgresql+psycopg://` URLs and chooses the psycopg 3 driver.
-3. In Render, create a Blueprint from the repository. The included root `render.yaml` specifies a **Free** service, Python 3.12, one API worker, the build/start commands, token authentication and a generated app access token. Supply the Neon connection string when prompted for `DATABASE_URL`.
-4. Deploy and wait for `/api/v1/health` to return a JSON response with `data.status` equal to `ok`.
-5. In Render's environment settings, copy the generated `APP_ACCESS_TOKEN` into the APK's connection screen. Do not paste it into chat, source files, public logs or a URL. Enter the service's base HTTPS URL, without `/docs` or `/api`.
-6. The service starts with `LLM_PROVIDER=demo`. Select the example equation and ask for an explanation to verify the full path. Demo replies are scripted and labeled.
+3. In Render, create a Blueprint from the repository. The included root `render.yaml` creates a **Free** Python API service and a **Free** Node.js web service. `services/api/.python-version` pins the API to Python 3.12.12. Supply the Neon connection string when prompted for `DATABASE_URL`.
+4. Deploy both services. Wait for the API's `/api/v1/health` endpoint to return a JSON response with `data.status` equal to `ok`.
+5. In the **smartboard-web** service's environment settings, set `BOARD_SERVICE_URL` to the API service's base HTTPS URL (without `/docs` or `/api`) and `APP_ACCESS_TOKEN` to the generated token from **smartboard-api**. These server-side values let the Next.js proxy authenticate to the API; the token is not sent to browser JavaScript. Redeploy the web service after saving the variables.
+6. The web service is protected by HTTP Basic Auth. Its username is `smartboard`; copy the generated `WEB_AUTH_PASSWORD` from the web service's environment settings and use it in the browser's sign-in prompt. Do not share this password or the API token publicly.
+7. The API starts with `LLM_PROVIDER=demo`. Select the example equation and ask for an explanation to verify the full path. Demo replies are scripted and labeled.
 
 For manual Render service creation, use:
+
+**API service**
 
 | Setting | Value |
 | --- | --- |
@@ -35,8 +38,26 @@ For manual Render service creation, use:
 | `PYTHON_VERSION` | `3.12.12` |
 | `DATABASE_URL` | Neon connection string with TLS enabled |
 | `AUTH_MODE` | `token` |
-| `APP_ACCESS_TOKEN` | A random secret containing at least 32 characters |
+| `APP_ACCESS_TOKEN` | Generate a random secret containing at least 32 characters |
 | `LLM_PROVIDER` | `demo` |
+
+**Web service**
+
+| Setting | Value |
+| --- | --- |
+| Service type | Web Service |
+| Runtime | Node |
+| Instance type | Free |
+| Root directory | `apps/web` |
+| Build command | `npm ci && npm run build` |
+| Start command | `node node_modules/next/dist/bin/next start --hostname 0.0.0.0 --port $PORT` |
+| Health check | `/` |
+| `WEB_AUTH_USERNAME` | `smartboard` |
+| `WEB_AUTH_PASSWORD` | Generate a random secret |
+| `BOARD_SERVICE_URL` | API service's base HTTPS URL |
+| `APP_ACCESS_TOKEN` | Copy the API service's generated token |
+
+If an API build log still shows Python 3.14, set the API service's `PYTHON_VERSION` environment variable to `3.12.12` and redeploy. Python 3.14 may make pip compile `pydantic-core` from Rust source instead of installing a prebuilt wheel.
 
 Generate a personal access token locally with `python -c "import secrets; print(secrets.token_urlsafe(48))"`. Anyone holding this token can access this one personal workspace. For independently authenticated users, use the existing OIDC mode and implement account sign-in; do not distribute one shared personal token to a class.
 

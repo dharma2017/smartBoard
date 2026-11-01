@@ -18,3 +18,16 @@ services:
         sync: false
       - key: LLM_PROVIDER
         value: demo
+  - type: web
+    name: smartboard-web
+    runtime: node
+    plan: free
+    rootDir: apps/web
+    buildCommand: npm ci && npm run build
+    startCommand: node node_modules/next/dist/bin/next start --hostname 0.0.0.0 --port $PORT
+    healthCheckPath: /
+    envVars:
+      - key: WEB_AUTH_USERNAME
+        value: smartboard
+      - key: WEB_AUTH_PASSWORD
+        generateValue: true

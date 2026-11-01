@@ -12,10 +12,22 @@ async function proxy(
       { error: { message: "Invalid API path" } },
       { status: 400 },
     );
+  const webAuthEnabled =
+    Boolean(process.env.WEB_AUTH_USERNAME) ||
+    Boolean(process.env.WEB_AUTH_PASSWORD);
+  if (webAuthEnabled && !process.env.APP_ACCESS_TOKEN)
+    return Response.json(
+      { error: { message: "The web service API token is not configured." } },
+      { status: 503 },
+    );
   const headers = new Headers({ "Content-Type": "application/json" });
-  for (const name of ["authorization", "idempotency-key", "x-request-id"])
+  for (const name of ["idempotency-key", "x-request-id"])
     if (request.headers.has(name))
       headers.set(name, request.headers.get(name)!);
+  const apiToken = process.env.APP_ACCESS_TOKEN;
+  if (apiToken) headers.set("Authorization", `Bearer ${apiToken}`);
+  else if (!webAuthEnabled && request.headers.has("authorization"))
+    headers.set("Authorization", request.headers.get("authorization")!);
   try {
     const upstream = await fetch(
       `${process.env.BOARD_SERVICE_URL || "http://127.0.0.1:8000"}/api/${path.join("/")}${request.nextUrl.search}`,

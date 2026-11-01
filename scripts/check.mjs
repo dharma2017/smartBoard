@@ -23,6 +23,7 @@ for (const [command, args, cwd] of [
       "--test",
       "tests/stream.test.mjs",
       "tests/transport.test.mjs",
+      "tests/web-auth.test.mjs",
     ],
     "apps/web",
   ],
