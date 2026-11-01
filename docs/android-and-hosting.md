@@ -51,7 +51,7 @@ For manual Render service creation, use:
 | Root directory | `apps/web` |
 | Build command | `npm ci && npm run build` |
 | Start command | `node node_modules/next/dist/bin/next start --hostname 0.0.0.0 --port $PORT` |
-| Health check | `/` |
+| Health check | `/healthz` |
 | `WEB_AUTH_USERNAME` | `smartboard` |
 | `WEB_AUTH_PASSWORD` | Generate a random secret |
 | `BOARD_SERVICE_URL` | API service's base HTTPS URL |

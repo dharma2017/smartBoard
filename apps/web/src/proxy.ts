@@ -2,6 +2,8 @@ import { NextResponse, type NextRequest } from "next/server";
 import { matchesBasicCredentials } from "./lib/web-auth.ts";
 
 export function proxy(request: NextRequest) {
+  if (request.nextUrl.pathname === "/healthz") return NextResponse.next();
+
   const username = process.env.WEB_AUTH_USERNAME;
   const password = process.env.WEB_AUTH_PASSWORD;
 
